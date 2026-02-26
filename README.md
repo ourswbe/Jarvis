@@ -61,8 +61,8 @@ If you see this startup error on Windows:
 
 `Configuring Next.js via 'next.config.ts' is not supported`
 
-- keep only `next.config.mjs` in the project root
+- keep only `next.config.js` in the project root
 - remove `next.config.ts` if it exists
 - run `npm run dev` again
 
-A safety script now runs before `dev` and automatically renames `next.config.ts` to `next.config.mjs` when possible.
+A safety script now runs before `dev` and automatically renames `next.config.ts` to `next.config.js` when possible.
