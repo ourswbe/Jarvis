@@ -2,12 +2,39 @@ export type RecorderController = {
   stop: () => Promise<Blob>;
 };
 
+function mapMicrophoneError(error: unknown): string {
+  if (!(error instanceof DOMException)) {
+    return error instanceof Error ? error.message : 'Unable to access microphone';
+  }
+
+  switch (error.name) {
+    case 'NotAllowedError':
+      return 'Microphone access denied. Allow microphone permission in your browser settings.';
+    case 'NotFoundError':
+      return 'No microphone device found. Connect a microphone and try again.';
+    case 'NotReadableError':
+      return 'Microphone is busy in another app. Close other audio apps and retry.';
+    case 'OverconstrainedError':
+      return 'Requested microphone constraints are not supported by this device.';
+    case 'SecurityError':
+      return 'Microphone access is blocked by browser security settings.';
+    default:
+      return error.message || 'Unable to access microphone';
+  }
+}
+
 export async function startRecording(): Promise<RecorderController> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('Microphone API is not supported in this browser');
   }
 
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  let stream: MediaStream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (error) {
+    throw new Error(mapMicrophoneError(error));
+  }
+
   const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
   const recorder = new MediaRecorder(stream, { mimeType });
   const chunks: BlobPart[] = [];

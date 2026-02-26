@@ -19,6 +19,24 @@ const statusText: Record<VoiceState, string> = {
   error: 'Error'
 };
 
+function getErrorHint(error: string | null): string | null {
+  if (!error) return null;
+
+  if (error.includes('No microphone device found')) {
+    return 'Tip: connect a headset or enable a microphone input in OS sound settings.';
+  }
+
+  if (error.includes('Microphone access denied')) {
+    return 'Tip: click the lock icon near the address bar and allow microphone for this site.';
+  }
+
+  if (error.includes('Missing API key')) {
+    return 'Tip: add OPENAI_API_KEY in .env.local and restart npm run dev.';
+  }
+
+  return null;
+}
+
 export default function VoicePage() {
   const [state, setState] = useState<VoiceState>('idle');
   const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'system', content: JARVIS_SYSTEM_PROMPT }]);
@@ -31,6 +49,8 @@ export default function VoicePage() {
     const last = [...messages].reverse().find((message) => message.role !== 'system');
     return last?.content || 'Tap Start and speak to Jarvis';
   }, [messages]);
+
+  const errorHint = useMemo(() => getErrorHint(error), [error]);
 
   const pushMessage = (message: ChatMessage) => {
     setMessages((prev) => {
@@ -142,9 +162,12 @@ export default function VoicePage() {
             onToggleMute={() => setMuted((value) => !value)}
             onClear={handleClear}
           />
-          <p className={`text-sm ${error ? 'text-rose-300' : 'text-slate-400'}`}>
-            {error || 'Microphone and network status are healthy.'}
-          </p>
+          <div className="space-y-1">
+            <p className={`text-sm ${error ? 'text-rose-300' : 'text-slate-400'}`}>
+              {error || 'Microphone and network status are healthy.'}
+            </p>
+            {errorHint && <p className="text-xs text-amber-300">{errorHint}</p>}
+          </div>
         </section>
 
         <ChatHistory messages={messages} />
