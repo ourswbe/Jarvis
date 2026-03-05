@@ -2,7 +2,7 @@
 
 Voice AI web app built with Next.js 14. Jarvis lets you speak through your microphone, get a concise assistant response, and hear the answer as synthesized speech.
 
-## Setup
+## Setup (local Node.js)
 
 1. Install dependencies:
 
@@ -30,6 +30,26 @@ Voice AI web app built with Next.js 14. Jarvis lets you speak through your micro
    ```bash
    npm run dev
    ```
+
+## Setup (Docker, recommended)
+
+1. Create `.env.local` from example and fill values:
+
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+2. Run with Docker Compose:
+
+   ```bash
+   docker compose up --build
+   ```
+
+3. Open:
+
+   - [http://localhost:3000/voice](http://localhost:3000/voice)
+
+> Important: do **not** commit `.env.local` to git. It contains your private API key.
 
 ## Voice mode
 
