@@ -34,6 +34,10 @@ function getErrorHint(error: string | null): string | null {
     return 'Tip: add OPENAI_API_KEY in .env.local and restart npm run dev.';
   }
 
+  if (error.includes('Failed to transcribe audio') || error.includes('Audio format is not supported')) {
+    return 'Tip: on iPhone, try Chrome/Edge, allow microphone access, and speak for 2-3 seconds before pressing Stop.';
+  }
+
   return null;
 }
 

@@ -1,8 +1,18 @@
 import type { ChatMessage } from '@/lib/types';
 
+function fileExtensionFromMime(mimeType: string): string {
+  if (mimeType.includes('mp4')) return 'm4a';
+  if (mimeType.includes('mpeg')) return 'mp3';
+  if (mimeType.includes('ogg')) return 'ogg';
+  if (mimeType.includes('wav')) return 'wav';
+  return 'webm';
+}
+
 export async function transcribeAudio(audio: Blob): Promise<string> {
   const formData = new FormData();
-  formData.append('audio', audio, 'recording.webm');
+  const extension = fileExtensionFromMime(audio.type || '');
+  const filename = `recording.${extension}`;
+  formData.append('audio', audio, filename);
 
   const response = await fetch('/api/stt', { method: 'POST', body: formData });
   if (!response.ok) {

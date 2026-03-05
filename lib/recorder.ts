@@ -23,9 +23,29 @@ function mapMicrophoneError(error: unknown): string {
   }
 }
 
+function resolveRecorderMimeType(): string | undefined {
+  if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+    return undefined;
+  }
+
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/mpeg',
+    'audio/ogg;codecs=opus'
+  ];
+
+  return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+}
+
 export async function startRecording(): Promise<RecorderController> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('Microphone API is not supported in this browser');
+  }
+
+  if (typeof MediaRecorder === 'undefined') {
+    throw new Error('MediaRecorder is not supported in this browser');
   }
 
   let stream: MediaStream;
@@ -35,8 +55,8 @@ export async function startRecording(): Promise<RecorderController> {
     throw new Error(mapMicrophoneError(error));
   }
 
-  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
-  const recorder = new MediaRecorder(stream, { mimeType });
+  const mimeType = resolveRecorderMimeType();
+  const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
   const chunks: BlobPart[] = [];
 
   recorder.addEventListener('dataavailable', (event) => {
@@ -50,7 +70,7 @@ export async function startRecording(): Promise<RecorderController> {
       new Promise<Blob>((resolve, reject) => {
         recorder.addEventListener('stop', () => {
           stream.getTracks().forEach((track) => track.stop());
-          const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+          const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' });
           if (blob.size === 0) {
             reject(new Error('Empty recording, please try again'));
             return;

@@ -21,9 +21,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ text: transcription.text || '' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'STT service error';
+
     if (message === 'Missing API key') {
       return NextResponse.json({ error: 'Missing API key' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Failed to transcribe audio' }, { status: 500 });
+
+    const details = message.toLowerCase();
+    if (details.includes('audio') || details.includes('format') || details.includes('codec')) {
+      return NextResponse.json(
+        { error: 'Audio format is not supported for transcription. Please retry from another browser/device.' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ error: `Failed to transcribe audio: ${message}` }, { status: 500 });
   }
 }
