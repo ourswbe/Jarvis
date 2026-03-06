@@ -19,6 +19,12 @@ const statusText: Record<VoiceState, string> = {
   error: 'Error'
 };
 
+function isTelegramInAppBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes('telegram') || ua.includes('tgios') || ua.includes('telegrambot');
+}
+
 function getErrorHint(error: string | null): string | null {
   if (!error) return null;
 
@@ -34,8 +40,11 @@ function getErrorHint(error: string | null): string | null {
     return 'Tip: add OPENAI_API_KEY in .env.local and restart npm run dev.';
   }
 
-  if (error.includes('Failed to transcribe audio') || error.includes('Audio format is not supported')) {
-    return 'Tip: on iPhone, try Chrome/Edge, allow microphone access, and speak for 2-3 seconds before pressing Stop.';
+  if (error.includes('Failed to transcribe audio') || error.includes('Audio format is not supported') || error.includes('HTTP 4')) {
+    if (isTelegramInAppBrowser()) {
+      return 'Tip: open this link in Safari/Chrome (outside Telegram in-app browser), then try Start/Stop again.';
+    }
+    return 'Tip: on iPhone, open in Safari/Chrome, allow microphone access, and speak for 2-3 seconds before pressing Stop.';
   }
 
   return null;

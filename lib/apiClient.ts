@@ -8,6 +8,24 @@ function fileExtensionFromMime(mimeType: string): string {
   return 'webm';
 }
 
+async function extractApiError(response: Response, fallback: string): Promise<string> {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    if (payload.error) {
+      return payload.error;
+    }
+  }
+
+  const text = await response.text().catch(() => '');
+  if (text) {
+    return `${fallback} (HTTP ${response.status}): ${text.slice(0, 180)}`;
+  }
+
+  return `${fallback} (HTTP ${response.status})`;
+}
+
 export async function transcribeAudio(audio: Blob): Promise<string> {
   const formData = new FormData();
   const extension = fileExtensionFromMime(audio.type || '');
@@ -16,8 +34,7 @@ export async function transcribeAudio(audio: Blob): Promise<string> {
 
   const response = await fetch('/api/stt', { method: 'POST', body: formData });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error || 'Failed to transcribe audio');
+    throw new Error(await extractApiError(response, 'Failed to transcribe audio'));
   }
 
   const payload = (await response.json()) as { text: string };
@@ -32,8 +49,7 @@ export async function requestChatReply(messages: ChatMessage[]): Promise<string>
   });
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error || 'Failed to fetch assistant reply');
+    throw new Error(await extractApiError(response, 'Failed to fetch assistant reply'));
   }
 
   const payload = (await response.json()) as { reply: string };
@@ -48,8 +64,7 @@ export async function synthesizeSpeech(text: string, voice?: string): Promise<Bl
   });
 
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error || 'Failed to synthesize speech');
+    throw new Error(await extractApiError(response, 'Failed to synthesize speech'));
   }
 
   return response.blob();
